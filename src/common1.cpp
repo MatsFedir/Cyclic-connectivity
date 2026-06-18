@@ -330,6 +330,7 @@ bool build_A0(const Graph& G, vector<vector<bool>>& A0, int g) {
 			A[G.edges[i].to] = true;
 
 			A0[i] = (A);
+			k++;
 		}
 	}
 
@@ -385,10 +386,8 @@ bool build_A0(const Graph& G, vector<vector<bool>>& A0, int g) {
 		int td = ceil(log2((g - 1) / 2.0));
 		int l = D / td;
 
-		int root = 0;
-
-		int v = G.vertices[root].number;
-		int u = G.vertices[root].adj[root];
+		int v = G.vertices[0].number;
+		int u = G.vertices[0].adj[0];
 
 		vector<int> roots = { u, v };
 
