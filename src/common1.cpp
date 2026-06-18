@@ -61,13 +61,13 @@ void treeGrow(const Graph& G, vector<bool>& Tv, vector<vector<pair<int, int>>> p
 			int b = edge.to;
 
 			if (!Tv[a]) {
-				TvLeaves.push_back(a);
-				if (addLeaves) Tv[a] = true;
+				Tv[a] = true;
+				if (addLeaves) TvLeaves.push_back(a);
 				break;
 			}
 			if (!Tv[b]) {
-				TvLeaves.push_back(b);
-				if (addLeaves) Tv[b] = true;
+				Tv[b] = true;
+				if (addLeaves) TvLeaves.push_back(b);
 				break;
 			}
 		}
@@ -76,7 +76,7 @@ void treeGrow(const Graph& G, vector<bool>& Tv, vector<vector<pair<int, int>>> p
 
 
 // This is a flow algorithm for finding paths inspired by Ford-Fulkerson's flow algorithm, but it is in O(n), because we don't need a special structure like his. The main focus is that as we travel the Graph in DFS manner, we only follow the edges that have been walked 0 times, walked from the other end of the edge to this end of the edge, and those that were walked both ways;
-bool findpaths(int v, Graph& G, vector<bool>& visited /* also includes Tv */, vector<bool> Tw, vector<pair<int, int>>& path) {
+bool findpaths(int v, Graph& G, vector<bool>& visited /* also includes Tv */, const vector<bool>& Tw, vector<pair<int, int>>& path) {
 	visited[v] = true;
 
 	if (Tw[v]) return true;
@@ -101,8 +101,6 @@ bool findpaths(int v, Graph& G, vector<bool>& visited /* also includes Tv */, ve
 				path.push_back({ edge.id, edge.flow });
 				return true;
 			}
-
-			edge.flow = 0;
 		}
 		// flow = 1        means that the edge was only walked forward
 		else if (flow == 1) {
@@ -113,8 +111,6 @@ bool findpaths(int v, Graph& G, vector<bool>& visited /* also includes Tv */, ve
 					path.push_back({ edge.id, edge.flow });
 					return true;
 				}
-
-				edge.flow = 1;
 			}
 		}
 		// flow = 2        means that the edge was only walked backwards
@@ -126,8 +122,6 @@ bool findpaths(int v, Graph& G, vector<bool>& visited /* also includes Tv */, ve
 					path.push_back({ edge.id, edge.flow });
 					return true;
 				}
-
-				edge.flow = 2;
 			}
 		}
 	}
@@ -233,8 +227,6 @@ vector<int> run_n3_algorithm(Graph& G, int girth) {
 
 	for (int v = 0; v < G.n; v++) {
 		for (int w = v + 1; w < G.n; w++) {
-
-
 			vector<vector<pair<int, int>>> paths;
 			vector<int> leavesV({ v });
 			vector<bool> Tv(G.n, false), Tw(G.n, false);
@@ -291,8 +283,6 @@ vector<int> run_n3_algorithm(Graph& G, int girth) {
 						for (Edge& edge : G.edges) edge.flow = 0;
 						break;
 					}
-					// If it's empty, it was a trivial cut. Do NOT break. 
-					// Let the do-while loop continue to grow Tv and Tw!
 				}
 
 
@@ -302,7 +292,6 @@ vector<int> run_n3_algorithm(Graph& G, int girth) {
 
 					if (!potential_cut.empty()) {
 						cyclic_cut = findcut(G, Tv, Tw, paths);
-						break;
 					}
 				}
 
@@ -452,6 +441,8 @@ vector<int> run_n2_algorithm(Graph& G, int girth) {
 			vector<vector<pair<int, int>>> paths;
 			vector<bool> Tv(G.n, 0);
 			vector<int> leavesV({ v });
+
+			T[v] = true;
 
 			int d = -1;
 
