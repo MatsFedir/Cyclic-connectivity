@@ -442,7 +442,7 @@ vector<int> run_n2_algorithm(Graph& G, int girth) {
 			vector<bool> Tv(G.n, 0);
 			vector<int> leavesV({ v });
 
-			T[v] = true;
+			Tv[v] = true;
 
 			int d = -1;
 
