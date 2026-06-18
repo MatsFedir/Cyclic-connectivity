@@ -1,30 +1,30 @@
-#include "common.h"
+#include <iostream>
 
-int main() {
-	Graph G = buildPetersen();
+#include "common.h" 
 
-	cout << "girth = " << girth(G).size << endl;
-	cout << "cyclic cut = " << cyclicCut(G) << endl;
+int main()
+{
+    int n;
+    cin >> n;
+    vector<vector<int>> graph(n);
+    for (int i = 0; i < n; i++) {
+        int s1, s2, s3;
+        cin >> s1 >> s2 >> s3;
+        vector<int> neighbours = { s1,s2,s3 };
+        graph[i] = neighbours;
+    }
+    vector<pair<int, int>> cycle_cut;
 
-	Graph G1 = buildHexagonalPrism();
+    if (cyclicCut(graph, cycle_cut)) {
+        cout << "success\n";
+    }
+    else {
+        cout << "fail\n";
+    }
 
-	cout << "girth = " << girth(G1).size << endl;
-	cout << "cyclic cut = " << cyclicCut(G1) << endl;
+    for (int i = 0; i < cycle_cut.size(); i++) {
+        cout << cycle_cut[i].first << " " << cycle_cut[i].second << "\n";
+    }
 
-	Graph G2 = buildMobiusLadder10();
-
-	cout << "girth = " << girth(G2).size << endl;
-	cout << "cyclic cut = " << cyclicCut(G2) << endl;
-
-	Graph G3 = special4();
-
-	cout << "girth = " << girth(G3).size << endl;
-	cout << "cyclic cut = " << cyclicCut(G3) << endl;
-
-	Graph G4 = largeOneGirth3();
-
-	cout << "girth = " << girth(G4).size << endl;
-	cout << "cyclic cut = " << cyclicCut(G4) << endl;
-
-	return 0;
+    return 0;
 }
