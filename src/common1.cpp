@@ -101,6 +101,8 @@ bool findpaths(int v, Graph& G, vector<bool>& visited /* also includes Tv */, co
 				path.push_back({ edge.id, edge.flow });
 				return true;
 			}
+
+			edge.flow = 0;
 		}
 		// flow = 1        means that the edge was only walked forward
 		else if (flow == 1) {
@@ -112,6 +114,8 @@ bool findpaths(int v, Graph& G, vector<bool>& visited /* also includes Tv */, co
 					return true;
 				}
 			}
+
+			edge.flow = 1;
 		}
 		// flow = 2        means that the edge was only walked backwards
 		else if (flow == 2) {
@@ -123,6 +127,8 @@ bool findpaths(int v, Graph& G, vector<bool>& visited /* also includes Tv */, co
 					return true;
 				}
 			}
+
+			edge.flow = 2;
 		}
 	}
 	return false;
@@ -498,7 +504,7 @@ vector<int> run_n2_algorithm(Graph& G, int girth) {
 				}
 
 
-				
+
 				if (current_cutsize == cutsize && cyclic_cut.empty()) {
 
 					vector<int> potential_cut = findcut(G, Tv, A, paths);
@@ -618,7 +624,7 @@ bool cyclicCut(const vector<vector<int>>& graph, vector<pair<int, int>>& cycle_c
 				q.push(w);
 			}
 		}
-		
+
 		components.push_back({ k, currV });
 		k++;
 		currV++;
