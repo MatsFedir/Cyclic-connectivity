@@ -543,29 +543,30 @@ bool cyclicCut(const vector<vector<int>>& graph, vector<pair<int, int>>& cycle_c
 	int curr_edge_id = 0;
 	for (int v = 0; v < n; v++) {
 		vertices[v].number = v;
-
-
+	
+	
 		// While transforming it, we also check if it's cubic
 		if (graph[v].size() != 3) {
 			return false;
 		}
-
+	
 		bool loop = false;
-
+	
 		for (int w : graph[v]) {
 			if (v == w) {
 				if (loop) continue;
 				loop = true;
-
+	
 				Edge e;
 				e.flow = 0;
 				e.from = v;
 				e.to = w;
 				e.id = curr_edge_id;
-
+	
 				edges.push_back(e);
 				curr_edge_id++;
-
+	
+				vertices[v].adj.push_back(w);
 				vertices[v].adj.push_back(w);
 				vertices[v].edge_id.push_back(e.id);
 			}
@@ -575,16 +576,24 @@ bool cyclicCut(const vector<vector<int>>& graph, vector<pair<int, int>>& cycle_c
 				e.from = v;
 				e.to = w;
 				e.id = curr_edge_id;
-
+	
 				edges.push_back(e);
 				curr_edge_id++;
-
+	
 				vertices[v].adj.push_back(w);
 				vertices[v].edge_id.push_back(e.id);
-
+	
 				vertices[w].adj.push_back(v);
 				vertices[w].edge_id.push_back(e.id);
 			}
+		}
+	}
+	
+	// Verify it is cubic AFTER all edges are built
+	for (int v = 0; v < n; v++) {
+		if (vertices[v].adj.size() != 3) {
+			cout << "graph is not cubic\n";
+			return false;
 		}
 	}
 
@@ -610,45 +619,43 @@ bool cyclicCut(const vector<vector<int>>& graph, vector<pair<int, int>>& cycle_c
 	// Here we check if the graph has more that 1 component already
 	vector<bool> visited(G.n, false);
 	int currV = 0;
-	vector<pair<int, int>> components;
 	int k = 0;
+
 	while (currV < G.n) {
 		if (visited[currV]) {
 			currV++;
 			continue;
 		}
 
-
 		queue<int> q;
 		q.push(currV);
+		visited[currV] = true; // Mark as visited immediately upon pushing
 
 		while (!q.empty()) {
 			int v = q.front();
 			q.pop();
-			visited[v] = true;
 
 			for (int w : G.vertices[v].adj) {
 				if (visited[w]) continue;
+
+				visited[w] = true; // Mark neighbor as visited BEFORE pushing
 				q.push(w);
 			}
 		}
 
-		components.push_back({ k, currV });
 		k++;
+		// Inside the while loop, right after k++:
+		if (k > 1) {
+			cout << "multiple components\n";
+			return true; // We found more than one component, stop searching!
+		}
 		currV++;
-	}
-
-	if (components.size() != 1) {
-		// The graph has multiple components
-		// Every cubic component has to have a cycle
-		return true;
 	}
 
 
 	// Looking for the edges that go from v to v
 	// if such edge exists, then the vertex has 1 such edge on one vertex, then we cut off his neighbours and get an independent component with a cycle. We need only one more vertex (it's neighbour) and we are guaranteed to have a second component (doe to the graph being cubic).
 
-	int loop = -1;;
 	for (int v = 0; v < n; v++) {
 		for (int w : G.vertices[v].adj) {
 			if (v == w) {
