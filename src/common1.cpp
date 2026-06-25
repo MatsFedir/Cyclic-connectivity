@@ -1,10 +1,12 @@
 #pragma once
 
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <vector>
 #include <algorithm>
 #include <queue>
+#include <cmath>
+#include <climits>
 
 #include "common.h"
 using namespace std;
@@ -39,7 +41,6 @@ int find_girth(const Graph& G) {
 				}
 			}
 		}
-		return bestGirth;
 	}
 	return bestGirth;
 }
@@ -47,12 +48,15 @@ int find_girth(const Graph& G) {
 
 // This method follows the papers. Instead of rebuilding the tree again, we grow them with paths.
 void treeGrow(const Graph& G, vector<bool>& Tv, vector<vector<pair<int, int>>> paths, vector<int>& TvLeaves, bool addLeaves) {
+	vector<bool> leaves(G.n, false);
+
+
 	for (auto& path : paths) {
 		// It is easier to start from the edges that are already inside the 
 		Edge edge = G.edges[path[0].first];
 		int v = edge.from;
 		int w = edge.to;
-		if (!Tv[v] || !Tv[w]) {
+		if (!Tv[v] && !Tv[w]) {
 			reverse(path.begin(), path.end());
 		}
 		for (int i = 0; i < path.size(); i++) {
@@ -60,17 +64,22 @@ void treeGrow(const Graph& G, vector<bool>& Tv, vector<vector<pair<int, int>>> p
 			int a = edge.from;
 			int b = edge.to;
 
+
 			if (!Tv[a]) {
-				Tv[a] = true;
+				leaves[a] = true;
 				if (addLeaves) TvLeaves.push_back(a);
 				break;
 			}
 			if (!Tv[b]) {
-				Tv[b] = true;
+				leaves[b] = true;
 				if (addLeaves) TvLeaves.push_back(b);
 				break;
 			}
 		}
+	}
+
+	for (int i = 0; i < G.n; i++) {
+		if (leaves[i]) Tv[i] = true;
 	}
 }
 
@@ -155,8 +164,7 @@ bool has_cycle(int u, int p, const Graph& G, const vector<bool>& subset, vector<
 
 
 
-// Here we do a greedy Max-flow algorithm that may or may not find the cyclic edge cut
-// This, however, is not a problem, because he will definitely find it if the trees grow enough
+// Here we do a Max-flow algorithm 
 vector<int> findcut(const Graph& G, const vector<bool>& Tv, const vector<bool>& Tw, const vector<vector<pair<int, int>>>& paths) {
 	vector<bool> S_reachable(G.n, false);
 	vector<int> Q;
@@ -241,13 +249,11 @@ vector<int> run_n3_algorithm(Graph& G, int girth) {
 
 			int d = -1;
 
-			do {
-				for (vector<pair<int, int>> path : paths) {
-					for (pair<int, int> edge : path) {
-						G.edges[edge.first].flow = edge.second;
-					}
-				}
+			for (Edge& edge : G.edges) {
+				edge.flow = 0;
+			}
 
+			do {
 
 				d++;
 				treeGrow(G, Tv, paths, leavesV, true);
@@ -271,7 +277,6 @@ vector<int> run_n3_algorithm(Graph& G, int girth) {
 
 
 						paths.push_back(path);
-						path.clear();
 					}
 				}
 
@@ -279,10 +284,13 @@ vector<int> run_n3_algorithm(Graph& G, int girth) {
 
 				if (current_cutsize < cutsize && current_cutsize < 3 * (1 << d)) {
 
+
+
 					vector<int> potential_cut = findcut(G, Tv, Tw, paths);
 
 					// Only accept it if it's a valid cyclic cut
 					if (!potential_cut.empty()) {
+
 						cutsize = current_cutsize;
 						cyclic_cut = potential_cut;
 
@@ -294,6 +302,8 @@ vector<int> run_n3_algorithm(Graph& G, int girth) {
 
 				if (current_cutsize == cutsize && cyclic_cut.empty()) {
 
+
+
 					vector<int> potential_cut = findcut(G, Tv, Tw, paths);
 
 					if (!potential_cut.empty()) {
@@ -301,11 +311,6 @@ vector<int> run_n3_algorithm(Graph& G, int girth) {
 					}
 				}
 
-
-
-				for (Edge& edge : G.edges) {
-					edge.flow = 0;
-				}
 
 				leavesV.clear();
 			} while (3 * (1 << d) <= cutsize);
@@ -452,13 +457,11 @@ vector<int> run_n2_algorithm(Graph& G, int girth) {
 
 			int d = -1;
 
+			for (Edge& edge : G.edges) {
+				edge.flow = 0;
+			}
 
 			do {
-				for (vector<pair<int, int>> path : paths) {
-					for (pair<int, int> edge : path) {
-						G.edges[edge.first].flow = edge.second;
-					}
-				}
 				++d;
 
 				treeGrow(G, Tv, paths, leavesV, true);
@@ -514,16 +517,6 @@ vector<int> run_n2_algorithm(Graph& G, int girth) {
 						break;
 					}
 				}
-
-
-
-				for (Edge& edge : G.edges) {
-					edge.flow = 0;
-				}
-
-
-
-				Tv.assign(G.n, false);
 				leavesV.clear();
 			} while (3 * (1 << d) < cutsize);
 		}
@@ -557,9 +550,26 @@ bool cyclicCut(const vector<vector<int>>& graph, vector<pair<int, int>>& cycle_c
 			return false;
 		}
 
+		bool loop = false;
 
 		for (int w : graph[v]) {
-			if (v >= w) {
+			if (v == w) {
+				if (loop) continue;
+				loop = true;
+
+				Edge e;
+				e.flow = 0;
+				e.from = v;
+				e.to = w;
+				e.id = curr_edge_id;
+
+				edges.push_back(e);
+				curr_edge_id++;
+
+				vertices[v].adj.push_back(w);
+				vertices[v].edge_id.push_back(e.id);
+			}
+			if (v > w) {
 				Edge e;
 				e.flow = 0;
 				e.from = v;
@@ -572,10 +582,8 @@ bool cyclicCut(const vector<vector<int>>& graph, vector<pair<int, int>>& cycle_c
 				vertices[v].adj.push_back(w);
 				vertices[v].edge_id.push_back(e.id);
 
-				if (v > w) {
-					vertices[w].adj.push_back(v);
-					vertices[w].edge_id.push_back(e.id);
-				}
+				vertices[w].adj.push_back(v);
+				vertices[w].edge_id.push_back(e.id);
 			}
 		}
 	}
@@ -638,33 +646,23 @@ bool cyclicCut(const vector<vector<int>>& graph, vector<pair<int, int>>& cycle_c
 
 
 	// Looking for the edges that go from v to v
-	// if such edge exists, then the vertex has either:
-	//		1 or 2 such edges on one vertex, then we cut off his neighbours and get an independent component with a cycle. Then we need only one more vertex (it's neighbour) and we have a second component. since the graph is cubic, then it's neighbour has to have a cycle within it's own component
-	//		3 edges on one vertex. Then the graph already consists of 2 components, so it got handled before
+	// if such edge exists, then the vertex has 1 such edge on one vertex, then we cut off his neighbours and get an independent component with a cycle. We need only one more vertex (it's neighbour) and we are guaranteed to have a second component (doe to the graph being cubic).
 
-	pair<int, int> s = { 0,-1 };
+	int loop = -1;;
 	for (int v = 0; v < n; v++) {
-		int k = 0;
 		for (int w : G.vertices[v].adj) {
 			if (v == w) {
-				k++;
-			}
-		}
-		if (k > s.first) {
-			s = { k,v };
-		}
-	}
-	if (s.first != 0) {
-		int v = s.second;
-		if (s.first >= 1 && n >= 2) {
-			for (int w : G.vertices[v].adj) {
-				if (w != v) {
-					cycle_cut.push_back({ v, w });
+				if (G.n >= 2) {
+					for (int w : G.vertices[v].adj) {
+						if (w != v) {
+							cycle_cut.push_back({ v, w });
+						}
+					}
+					return true;
 				}
+				else return false;
 			}
-			return true;
 		}
-		else return false;
 	}
 
 
